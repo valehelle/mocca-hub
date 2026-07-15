@@ -1,0 +1,22 @@
+{
+  "id": "marketing-skills",
+  "name": "Marketing Skills",
+  "emoji": "📣",
+  "description": "A marketing toolkit — copywriting, SEO, ads, analytics, conversion, and dozens more.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Write 5 ad headlines for a productivity app, then critique them.",
+  "source": "github:coreyhaines31/marketingskills",
+  "author": "coreyhaines31",
+  "category": "Work",
+  "tagline": "Copywriting, SEO, ads, analytics",
+  "featured": true
+}

@@ -1,0 +1,21 @@
+{
+  "id": "educators-toolkit",
+  "name": "Educator's Toolkit",
+  "emoji": "🎓",
+  "description": "165 evidence-based teaching skills — curriculum design, assessment, feedback, and learning-science techniques.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Design a formative-assessment sequence for a Year 9 unit on photosynthesis.",
+  "source": "github:GarethManning/claude-education-skills",
+  "author": "GarethManning",
+  "category": "Learning",
+  "tagline": "165 evidence-based teaching skills"
+}

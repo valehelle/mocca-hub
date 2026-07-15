@@ -1,0 +1,21 @@
+{
+  "id": "learning-toolkit",
+  "name": "Socratic Tutor",
+  "emoji": "💡",
+  "description": "Teaches through guided Socratic questions instead of answers, to build real understanding.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Teach me how React hooks work by guiding me with questions, not answers.",
+  "source": "github:devinat1/learning-toolkit",
+  "author": "devinat1",
+  "category": "Learning",
+  "tagline": "Teaches by Socratic questioning"
+}

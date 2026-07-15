@@ -1,0 +1,21 @@
+{
+  "id": "learning-framework",
+  "name": "Learning Framework",
+  "emoji": "🧠",
+  "description": "A study router built on cognitive science — Zettelkasten, active recall, the Feynman technique, and evergreen notes.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Teach me organic chemistry using active recall and the Feynman technique.",
+  "source": "github:ironyjk/learning-framework",
+  "author": "ironyjk",
+  "category": "Learning",
+  "tagline": "A study router built on cognitive science"
+}

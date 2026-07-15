@@ -1,0 +1,21 @@
+{
+  "id": "cpa-practice-kit",
+  "name": "CPA Practice Kit",
+  "emoji": "📊",
+  "description": "Automates admin for solo CPAs — engagement letters, client checklists, summaries, and status emails.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Draft an engagement letter and onboarding checklist for a new LLC bookkeeping client.",
+  "source": "github:NewbieAppBuilder/cpa-practice-toolkit",
+  "author": "NewbieAppBuilder",
+  "category": "Money",
+  "tagline": "Admin autopilot for solo CPAs"
+}

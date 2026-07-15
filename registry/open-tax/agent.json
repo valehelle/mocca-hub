@@ -1,0 +1,21 @@
+{
+  "id": "open-tax",
+  "name": "Open Tax",
+  "emoji": "🧾",
+  "description": "A free, open-source US federal tax-prep assistant — drop in your W-2s and 1099s and it walks you through the return.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Here are my W-2 and 1099 — estimate my federal tax for this year.",
+  "source": "github:tugberkgoc/open-tax",
+  "author": "tugberkgoc",
+  "category": "Money",
+  "tagline": "Open-source US federal tax prep"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "career-navigator",
+  "name": "Career Navigator",
+  "emoji": "🧭",
+  "description": "An all-in-one job-search companion — recruiter, coach, and market analyst that tracks applications and analyzes fit.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Analyze this job posting against my resume and tell me if I should apply.",
+  "source": "github:tmargolis/career-navigator",
+  "author": "tmargolis",
+  "category": "Career",
+  "tagline": "Recruiter, coach, and strategist in one"
+}

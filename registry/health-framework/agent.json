@@ -1,0 +1,21 @@
+{
+  "id": "health-framework",
+  "name": "Health & Training",
+  "emoji": "🏋️",
+  "description": "An evidence-based health and fitness router — Mediterranean, keto, fasting, macro tracking, and hypertrophy training.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Build me a beginner hypertrophy plan paired with a Mediterranean-diet approach.",
+  "source": "github:ironyjk/health-framework",
+  "author": "ironyjk",
+  "category": "Life",
+  "tagline": "Evidence-based health and fitness"
+}

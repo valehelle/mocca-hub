@@ -1,0 +1,21 @@
+{
+  "id": "daily-journal",
+  "name": "Daily Journal",
+  "emoji": "📓",
+  "description": "Conversational daily journaling with mood detection, accountability check-ins, and structured saved entries.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Let's do today's journal entry — I've had a rough day and want to talk it through.",
+  "source": "github:adelaidasofia/claude-daily-journal",
+  "author": "adelaidasofia",
+  "category": "Life",
+  "tagline": "Journaling with mood detection"
+}

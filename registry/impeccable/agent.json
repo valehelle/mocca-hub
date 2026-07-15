@@ -1,0 +1,22 @@
+{
+  "id": "impeccable",
+  "name": "Impeccable",
+  "emoji": "🎨",
+  "description": "Design fluency for frontend — polish, audit, and critique your UI against real craft standards.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Audit this screen for design issues and tell me exactly what to fix.",
+  "source": "github:pbakaus/impeccable",
+  "version": "1.0.0",
+  "author": "pbakaus",
+  "category": "Work",
+  "tagline": "Design fluency for frontend"
+}

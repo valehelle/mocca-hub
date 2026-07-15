@@ -1,0 +1,21 @@
+{
+  "id": "investment-framework",
+  "name": "Investment Framework",
+  "emoji": "📈",
+  "description": "A personal investing decision-router across 12 strategies — Bogleheads, All-Weather, Barbell, factor investing, and more.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "I'm 30 with a 30-year horizon — which framework fits me and how would I build the portfolio?",
+  "source": "github:ironyjk/investment-framework",
+  "author": "ironyjk",
+  "category": "Money",
+  "tagline": "A decision-router across 12 strategies"
+}

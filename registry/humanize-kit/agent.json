@@ -1,0 +1,21 @@
+{
+  "id": "humanize-kit",
+  "name": "Humanize Kit",
+  "emoji": "🎭",
+  "description": "Builds a voice fingerprint from your real writing, then rewrites AI text to sound like you.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Learn my voice from these three posts, then humanize this AI-drafted newsletter.",
+  "source": "github:Branded-Mayhem-Collective-LLC/humanize-kit",
+  "author": "Branded-Mayhem-Collective-LLC",
+  "category": "Writing",
+  "tagline": "Rewrites in your own voice"
+}

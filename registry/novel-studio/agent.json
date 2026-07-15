@@ -1,0 +1,21 @@
+{
+  "id": "novel-studio",
+  "name": "Novel Studio",
+  "emoji": "📚",
+  "description": "An end-to-end web-novel production system — premise design, character building, chapter drafting, and revision.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Help me design the world and main characters for a serialized fantasy web novel.",
+  "source": "github:MJbae/novel-studio",
+  "author": "MJbae",
+  "category": "Writing",
+  "tagline": "End-to-end web-novel production"
+}

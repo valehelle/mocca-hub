@@ -1,0 +1,21 @@
+{
+  "id": "research-co-pilot",
+  "name": "Research Co-Pilot",
+  "emoji": "🔬",
+  "description": "The full research lifecycle — literature review, methodology, data analysis, citations, and manuscript drafting.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Run a structured literature review on intermittent fasting and sleep quality.",
+  "source": "github:Marazii/research-co-pilot",
+  "author": "Marazii",
+  "category": "Work",
+  "tagline": "The full research lifecycle"
+}

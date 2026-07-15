@@ -1,0 +1,21 @@
+{
+  "id": "english-buddy",
+  "name": "English Buddy",
+  "emoji": "🗣️",
+  "description": "A writing coach for non-native English speakers that quietly fixes grammar, tone, and common mistakes.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Check my email for grammar and make it sound natural to a native speaker.",
+  "source": "github:xiaolai/claude-english-buddy-for-claude",
+  "author": "xiaolai",
+  "category": "Writing",
+  "tagline": "A coach for non-native writers"
+}

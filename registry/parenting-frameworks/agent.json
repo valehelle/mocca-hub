@@ -1,0 +1,21 @@
+{
+  "id": "parenting-frameworks",
+  "name": "Parenting Frameworks",
+  "emoji": "🧸",
+  "description": "A parenting guide across 16 approaches — Positive Discipline, PET, Collaborative Problem Solving, and Emotion Coaching.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "My 4-year-old has tantrums at bedtime — walk me through Emotion Coaching.",
+  "source": "github:ironyjk/parenting-frameworks",
+  "author": "ironyjk",
+  "category": "Life",
+  "tagline": "A guide across 16 approaches"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "blog-studio",
+  "name": "Blog Studio",
+  "emoji": "📝",
+  "description": "End-to-end blog creation — briefs, drafting, rewriting, SEO, editorial calendars, and a 100-point quality score.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Write and SEO-optimize a 1,200-word post on beginner sourdough baking.",
+  "source": "github:AgriciDaniel/claude-blog",
+  "author": "AgriciDaniel",
+  "category": "Writing",
+  "tagline": "Briefs to drafts to SEO"
+}

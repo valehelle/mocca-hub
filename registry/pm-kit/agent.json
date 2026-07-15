@@ -1,0 +1,21 @@
+{
+  "id": "pm-kit",
+  "name": "PM Kit",
+  "emoji": "📋",
+  "description": "A knowledge vault for product managers — PRDs, standups, decisions, sprints, and exec briefs.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Draft a PRD for a new onboarding flow.",
+  "source": "github:kv0906/pm-kit",
+  "author": "kv0906",
+  "category": "Work",
+  "tagline": "A knowledge vault for PMs"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "german-legal",
+  "name": "German Legal Companion",
+  "emoji": "⚖️",
+  "description": "Deep German legal knowledge across 12 areas of Bundesrecht with section-level statute citations.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Explain the contract-law rules before I sign a German GmbH supplier agreement.",
+  "source": "github:mlobo2012/Germany-SMB-Legal-Plugin",
+  "author": "mlobo2012",
+  "category": "Life",
+  "tagline": "Deep German legal knowledge"
+}

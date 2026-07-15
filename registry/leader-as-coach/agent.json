@@ -1,0 +1,21 @@
+{
+  "id": "leader-as-coach",
+  "name": "Leader as Coach",
+  "emoji": "🧑‍🏫",
+  "description": "A six-month program that teaches managers weekly coaching models and practical tools.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Start me on Month 1 — teach me the foundations of coaching my team.",
+  "source": "github:LBD-DASH/leader-as-coach",
+  "author": "LBD-DASH",
+  "category": "Learning",
+  "tagline": "Six months of manager coaching"
+}

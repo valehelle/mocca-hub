@@ -1,0 +1,22 @@
+{
+  "id": "learn-anything",
+  "name": "Learn Anything",
+  "emoji": "🔎",
+  "description": "Researches any topic online and compiles a comprehensive, indexed learning guide.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Teach me the basics of options trading.",
+  "source": "github:agent-sh/learn",
+  "author": "agent-sh",
+  "category": "Learning",
+  "tagline": "Researches any topic, end to end",
+  "featured": true
+}

@@ -1,0 +1,21 @@
+{
+  "id": "kate-career-coach",
+  "name": "Kate, Career Coach",
+  "emoji": "💼",
+  "description": "A career coach for senior job seekers — interviews you first, then delivers tailored fit assessments and prep.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "I'm a senior marketing director job-hunting — interview me and build my profile.",
+  "source": "github:cbellbell-spin/kate-career-coach",
+  "author": "cbellbell-spin",
+  "category": "Career",
+  "tagline": "Interviews you first, then coaches"
+}

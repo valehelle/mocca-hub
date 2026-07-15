@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Electron's V8 needs to allocate and execute JIT memory. -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+
+  <!-- Mocca spawns the Electron binary as Node (ELECTRON_RUN_AS_NODE) to run the
+       Playwright MCP server, so the child process inherits a modified env. -->
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+  <true/>
+
+  <!-- The Agent SDK ships and executes its own native `claude` binary from
+       app.asar.unpacked. Under hardened runtime, loading/executing a bundled
+       binary that isn't part of the main executable needs this. -->
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+
+  <!-- Agents read and write user-chosen files (uploads into input/, deliverables
+       into output/) and reach the network for research and streaming. -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+</dict>
+</plist>

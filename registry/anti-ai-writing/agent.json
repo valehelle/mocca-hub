@@ -1,0 +1,21 @@
+{
+  "id": "anti-ai-writing",
+  "name": "Anti-AI Writing",
+  "emoji": "✍️",
+  "description": "Strips the tell-tale words and cadences that make a draft read like AI output, so your writing sounds human.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Rewrite this cover letter to remove AI-sounding phrasing but keep my voice.",
+  "source": "github:avectats7/anti-ai-writing",
+  "author": "avectats7",
+  "category": "Writing",
+  "tagline": "Strips the tell-tale AI cadence"
+}

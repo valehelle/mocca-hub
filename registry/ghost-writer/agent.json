@@ -1,0 +1,22 @@
+{
+  "id": "ghost-writer",
+  "name": "Ghost Writer",
+  "emoji": "📖",
+  "description": "A full book-writing studio — onboarding, structured drafting, hostile critique, and continuity checks across fiction and non-fiction.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Help me outline and draft chapter 1 of my novel about two estranged sisters.",
+  "source": "github:simonediroma/claude-ghost-writer",
+  "author": "simonediroma",
+  "category": "Writing",
+  "tagline": "A full book-writing studio",
+  "featured": true
+}

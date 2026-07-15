@@ -1,0 +1,21 @@
+{
+  "id": "resume-toolkit",
+  "name": "Resume & Career Toolkit",
+  "emoji": "📄",
+  "description": "20 skills across the job hunt — resume writing, ATS optimization, cover letters, and interview prep.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Rewrite my resume bullets to pass ATS for a PM role and draft a cover letter.",
+  "source": "github:jirawatp/resume-career-toolkit",
+  "author": "jirawatp",
+  "category": "Career",
+  "tagline": "20 skills across the whole job hunt"
+}

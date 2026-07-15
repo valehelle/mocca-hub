@@ -1,0 +1,24 @@
+{
+  "id": "career-ops",
+  "name": "Career Ops",
+  "emoji": "💼",
+  "description": "AI job-search command center — evaluate offers, generate CVs, scan portals, track applications.",
+  "allowedTools": [
+    "WebSearch",
+    "WebFetch",
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash"
+  ],
+  "examplePrompt": "Evaluate this job posting for fit and draft a tailored CV: <paste a JD or a URL>",
+  "source": "github:santifer/career-ops",
+  "skillPath": ".claude/skills/career-ops/SKILL.md",
+  "version": "1.6.0",
+  "author": "santifer",
+  "category": "Career",
+  "tagline": "Your job-search command center",
+  "featured": true
+}

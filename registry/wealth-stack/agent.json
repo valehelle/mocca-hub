@@ -1,0 +1,21 @@
+{
+  "id": "wealth-stack",
+  "name": "Wealth Stack",
+  "emoji": "💰",
+  "description": "A wealth-management workspace for Indian investors — portfolio analysis, tax planning, and goal-based SIPs.",
+  "allowedTools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "Bash",
+    "WebSearch",
+    "WebFetch"
+  ],
+  "examplePrompt": "Review my SIP allocation and suggest a goal-based plan for retirement in 20 years.",
+  "source": "github:revanupoju/Wealth-Stack",
+  "author": "revanupoju",
+  "category": "Money",
+  "tagline": "Wealth management for Indian investors"
+}
