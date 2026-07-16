@@ -5,6 +5,14 @@ the **real** plugin (`plugin.json` + `SKILL.md`) straight from its repo and buil
 the app around it: a marketplace to find it, a workspace of its own, and a Canvas
 to build in. Powered by the [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk).
 
+<p align="center">
+  <a href="https://github.com/valehelle/mocca-hub/releases/latest">
+    <img alt="Download Mocca for macOS" src="https://img.shields.io/github/v/release/valehelle/mocca-hub?style=for-the-badge&label=%20Download%20for%20macOS&labelColor=0e0f13&color=d97757&logo=apple&logoColor=white">
+  </a>
+  <br>
+  <sub>Apple Silicon · signed &amp; notarized — no Gatekeeper warning · needs your own Claude access</sub>
+</p>
+
 ![Mocca — asked in plain English, the agent builds a working player on the Canvas](assets/screenshot-canvas.png)
 
 > [!IMPORTANT]
@@ -100,9 +108,12 @@ Sentry, Stripe) from a catalog, by name, or bundled by the plugin.
 
 ## Install
 
-No build is published yet — grab it from [Releases](../../releases) once one is,
-or build it yourself below. Release DMGs are signed and notarized, so they install
-without a Gatekeeper warning.
+**[Download the latest DMG →](https://github.com/valehelle/mocca-hub/releases/latest)**
+Open it, drag Mocca to Applications, done.
+
+The build is signed with a Developer ID and notarized by Apple, so it installs with
+**no Gatekeeper warning** — no right-click-to-open dance. Apple Silicon (M1 or
+newer) only; Intel Macs aren't supported yet.
 
 ## Build from source
 
