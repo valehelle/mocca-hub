@@ -18,8 +18,6 @@ terminal with slash commands you're expected to memorize. That means:
   the door is closed. A career coach or a tax helper shouldn't require a CLI.
 - **The answer is always a wall of text.** A terminal can print. It can't show you
   a dashboard, a comparison, or a working player.
-- **You get what the author shipped.** Bending a plugin to your actual needs means
-  editing someone else's markdown.
 
 Mocca fixes the *distribution and interface* problem — not by replacing those
 plugins, but by giving them a home. It installs the **real** Claude Code plugin
@@ -47,12 +45,8 @@ that runs **live in the panel**: a comparison, a dashboard, a timeline, a workin
 music player. It's a real app, not a screenshot — it handles its own interactions
 in-page, and can talk back through a small `window.mocca` bridge
 (`chat.send`, `files.read/write/list`). Mocca injects its design system, so
-whatever the agent builds looks native.
-
-### 4. Adaptable, not frozen
-A marketplace agent isn't fixed. Ask it to change the tool it just built — "make
-the player minimal, add a rain toggle" — and it reshapes to you. The plugin is
-yours once installed.
+whatever the agent builds looks native. Don't like what it made? Say so — "make the
+player minimal, add a rain toggle" — and it rebuilds it.
 
 ## How it works
 
