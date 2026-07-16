@@ -339,15 +339,16 @@ export default function App() {
   const [fileDir, setFileDir] = useState(''); // '' = root (Shared + Created)
   const fileDirRef = useRef('');
   const [viewer, setViewer] = useState<FileView | null>(null);
-  // The interactive in-app view currently loaded for this workspace (null = none).
-  // It lives in the right panel and stays mounted while you chat, so media keeps
-  // playing. `wsTab` toggles the panel between the file browser and the view.
-  const [activeView, setActiveView] = useState<{
-    name: string;
-    rel: string;
-    src: string;
-    agentId: string; // the workspace this view belongs to
-  } | null>(null);
+  // The interactive in-app view loaded PER workspace (agentId → view). Each entry
+  // is rendered as its own iframe that stays mounted (hidden when you're in a
+  // different workspace) so media keeps playing everywhere — opening one
+  // workspace's Canvas never stops another's player. `wsTab` toggles the panel
+  // between the file browser and the view.
+  const [activeViews, setActiveViews] = useState<
+    Record<string, { name: string; rel: string; src: string }>
+  >({});
+  // The view belonging to the currently selected workspace (null = none).
+  const activeView = selectedId ? activeViews[selectedId] ?? null : null;
   const [wsTab, setWsTab] = useState<'files' | 'view'>('files');
   // The agent is writing a Canvas HTML file — show a "composing" cue until the
   // [CANVAS:] marker renders it. Holds the agentId that's composing.
@@ -386,7 +387,11 @@ export default function App() {
   // doesn't swallow the mouseup and leave the drag "stuck".
   const [resizing, setResizing] = useState(false);
   const viewFrameRef = useRef<HTMLIFrameElement | null>(null);
-  const lastViewMarkerRef = useRef<string>('');
+  // Marker keys we've already opened (one per canvas emission, across all
+  // workspaces/threads). A Set — NOT a single value — so returning to a
+  // workspace whose Canvas is already open never re-opens it (which would
+  // reload the iframe and stop its player).
+  const openedViewsRef = useRef<Set<string>>(new Set());
   const viewBaseRef = useRef<string>(''); // loopback origin serving view files
   // Mocca-owned audio: a stream the app plays itself (not a detached ffplay), so
   // it's always stoppable and persists across workspace switches. Lives in the
@@ -441,7 +446,7 @@ export default function App() {
   const selected = installed.find((a) => a.id === selectedId) ?? null;
   // Does the currently-open view belong to the workspace on screen? (A view from
   // another workspace stays mounted+hidden so its media keeps playing.)
-  const viewHere = !!activeView && activeView.agentId === selectedId;
+  const viewHere = !!activeView; // activeView is already scoped to selectedId
   const composingHere = composing === selectedId;
   const isInstalled = (id: string) => installed.some((a) => a.id === id);
 
@@ -855,7 +860,7 @@ export default function App() {
     // Cache-bust so re-opening the same file always reloads fresh content (the
     // iframe is keyed by src; an identical URL would never reload).
     const src = `${viewBaseRef.current}/${encodeURIComponent(id)}/${encRel}?v=${Date.now()}`;
-    setActiveView({ name, rel, src, agentId: id });
+    setActiveViews((v) => ({ ...v, [id]: { name, rel, src } }));
     setComposing((c) => (c === id ? null : c));
     setWsTab('view');
     refreshCanvases(id);
@@ -1259,8 +1264,8 @@ export default function App() {
       // Include the message index so a NEW message re-emitting the SAME file
       // (a regenerated Canvas) re-loads instead of being deduped away.
       const key = `${threadId}:${i}:${rel}`;
-      if (lastViewMarkerRef.current === key) break; // already opened
-      lastViewMarkerRef.current = key;
+      if (openedViewsRef.current.has(key)) break; // already opened — don't reload
+      openedViewsRef.current.add(key);
       loadView(rel, rel.split('/').pop() || rel);
       break;
     }
@@ -1273,9 +1278,7 @@ export default function App() {
   useEffect(() => {
     // Returning to the view's own workspace re-opens the View tab; elsewhere,
     // show Files (the view keeps playing hidden either way).
-    setWsTab(
-      activeView && activeView.agentId === selectedId ? 'view' : 'files',
-    );
+    setWsTab(selectedId && activeViews[selectedId] ? 'view' : 'files');
     refreshCanvases(selectedId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
@@ -2216,9 +2219,16 @@ export default function App() {
                     <button
                       className="workspace__icon"
                       onClick={() => {
-                        setActiveView(null);
+                        setActiveViews((v) => {
+                          const next = { ...v };
+                          delete next[selectedId];
+                          return next;
+                        });
                         setWsTab('files');
-                        lastViewMarkerRef.current = '';
+                        // Let this workspace's marker re-open the Canvas later.
+                        for (const k of [...openedViewsRef.current]) {
+                          if (k.startsWith(`${threadId}:`)) openedViewsRef.current.delete(k);
+                        }
                       }}
                       title="Close canvas"
                       aria-label="Close canvas"
@@ -2294,25 +2304,30 @@ export default function App() {
                   </div>
                 )}
 
-                {/* The view iframe stays mounted whenever a view is loaded, so
-                    media keeps playing; the Files tab just hides it. */}
-                {activeView && (
-                  <iframe
-                    key={activeView.src}
-                    ref={viewFrameRef}
-                    className="viewpane"
-                    style={{
-                      display:
-                        wsTab === 'view' && viewHere && !composingHere
-                          ? 'block'
-                          : 'none',
-                      pointerEvents: resizing ? 'none' : 'auto',
-                    }}
-                    sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms allow-downloads"
-                    src={activeView.src}
-                    title={activeView.name}
-                  />
-                )}
+                {/* One iframe PER workspace that has a Canvas open. Each stays
+                    mounted whenever it's loaded — hidden when you're in another
+                    workspace or on the Files tab — so a player in one workspace
+                    keeps playing while you work in another. Only the selected
+                    workspace's frame is shown and wired to the bridge ref. */}
+                {Object.entries(activeViews).map(([agentId, v]) => {
+                  const isSelected = agentId === selectedId;
+                  const visible =
+                    isSelected && wsTab === 'view' && viewHere && !composingHere;
+                  return (
+                    <iframe
+                      key={agentId}
+                      ref={isSelected ? viewFrameRef : undefined}
+                      className="viewpane"
+                      style={{
+                        display: visible ? 'block' : 'none',
+                        pointerEvents: resizing ? 'none' : 'auto',
+                      }}
+                      sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms allow-downloads"
+                      src={v.src}
+                      title={v.name}
+                    />
+                  );
+                })}
 
                 {wsTab === 'view' && composingHere && (
                   <div className="canvas-empty">

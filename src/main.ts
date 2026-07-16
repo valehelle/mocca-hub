@@ -72,7 +72,8 @@ const MOCCA_CANVAS_CSS = `
 body{margin:0;background:var(--bg);color:var(--text);
   font-family:"Helvetica Neue",Helvetica,Arial,-apple-system,system-ui,sans-serif;
   font-size:15px;line-height:1.55;letter-spacing:-.005em;
-  padding:clamp(18px,4.5vw,48px) clamp(16px,4.5vw,40px);-webkit-font-smoothing:antialiased}
+  padding:clamp(18px,4.5vw,48px) clamp(16px,4.5vw,40px);
+  padding-bottom:clamp(48px,10vw,96px);-webkit-font-smoothing:antialiased}
 .container{max-width:var(--maxw);margin:0 auto}
 .section{margin:2.2em 0}
 /* Type — big, bold, tight; shrinks gracefully in a narrow panel */
@@ -141,11 +142,15 @@ ul,ol{padding-left:1.3em}li{margin:.35em 0}
 /* App shell — STABLE layout so nothing jumps when state changes. Fixed header +
    fixed control bar, scrolling body. Persistent controls (a player's transport,
    a now-playing line) live in .app__bar and update IN PLACE. */
-html,body{height:100%}
-body:has(.app){padding:0}
+/* Normal docs grow with their content so the page scrolls naturally; only the
+   .app shell is pinned to the viewport (and scrolls internally via .app__body).
+   Forcing height:100% on every body pinned long docs to viewport height, which
+   could clip/kill scrolling depending on the agent's markup. */
+html,body{min-height:100%}
+body:has(.app){padding:0;height:100%;overflow:hidden}
 .app{display:flex;flex-direction:column;height:100vh}
 .app__header{flex-shrink:0;padding:16px clamp(16px,4vw,24px);border-bottom:1px solid var(--line)}
-.app__body{flex:1;min-height:0;overflow:auto;padding:clamp(16px,4vw,24px)}
+.app__body{flex:1;min-height:0;overflow:auto;padding:clamp(16px,4vw,24px);padding-bottom:clamp(40px,8vw,72px)}
 .app__bar{flex-shrink:0;display:flex;align-items:center;gap:14px;
   padding:12px clamp(16px,4vw,24px);border-top:1px solid var(--line);background:var(--panel)}`;
 

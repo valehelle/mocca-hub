@@ -1584,6 +1584,7 @@ body {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  margin-top: 20px;
 }
 .btn-danger {
   background: #d9575a;
