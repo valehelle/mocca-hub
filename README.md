@@ -127,13 +127,9 @@ Mocca shipped a "use my subscription" button, the account that gets restricted i
 isn't a trade worth making — so the released build has no subscription path at
 all. It's gated on the build itself, not a setting you can flip.
 
-**If you build from source, it works differently.** A source build will use a
-`claude` sign-in already on your machine, because at that point it's *you* using
-the Agent SDK on your own account — not an app doing it on your behalf. The same
-policy contemplates "ordinary, individual usage of Claude Code and the Agent SDK."
-Mocca shows you the warning above and then gets out of the way.
-
-That's your account, your machine, and your call — just make it knowingly.
+Mocca is open source, so obviously you can clone it and change whatever you like.
+What you do with your own account on your own machine is your choice — and your
+responsibility.
 
 ## Install
 
