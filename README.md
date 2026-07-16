@@ -1,7 +1,9 @@
 # Mocca
 
-**A desktop home for installable AI agents.** Browse a marketplace, install an
-agent, and chat with it — powered by the [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk).
+**Mocca doesn't replace Claude Code plugins — it gives them a home.** It installs
+the **real** plugin (`plugin.json` + `SKILL.md`) straight from its repo and builds
+the app around it: a marketplace to find it, a workspace of its own, and a Canvas
+to build in. Powered by the [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk).
 
 ![Mocca — asked in plain English, the agent builds a working player on the Canvas](assets/screenshot-canvas.png)
 
@@ -31,10 +33,6 @@ they're what Mocca is for:
   workspace, files, memory, tools, and schedule — sitting next to your DJ and
   your tax helper.
 
-Mocca doesn't replace those plugins; it gives them a home. It installs the
-**real** Claude Code plugin (`plugin.json` + `SKILL.md`) straight from its repo
-and builds the app around it.
-
 ## What it solves
 
 ### 1. A shelf you can browse
@@ -54,6 +52,11 @@ playing while you switch workspaces, and can call back through a small
 `window.mocca` bridge (`chat.send`, `files.read/write/list`). Mocca injects its
 design system, so whatever the agent builds looks native. Don't like what it made?
 Say so — "make the player minimal, add a rain toggle" — and it rebuilds it.
+
+<img src="assets/screenshot-canvas-panel.png" alt="A Canvas the DJ agent built — mood tiles, a playing mix, and working transport + volume controls" width="480">
+
+Nothing above was hand-built: the agent wrote the player, wired every control, and
+it keeps playing while you work in another workspace.
 
 ### 3. Built per agent, not per developer
 Every agent is its own workspace: its own folder, its own chat threads (which keep
