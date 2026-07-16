@@ -610,6 +610,114 @@ async function claudeAuthStatus(): Promise<{
 
 ipcMain.handle('system:authStatus', () => claudeAuthStatus());
 
+// ── Plan usage limits ────────────────────────────────────────────────────────
+// The data behind Claude Code's `/usage` panel, surfaced in Settings: the
+// claude.ai plan plus its rate-limit windows — a rolling 5-hour "current
+// session" window and weekly windows (all-models + per-model), each a %
+// utilization with a reset time. Pulled from the SDK on demand (an empty-input
+// query spends no tokens) and cached so Settings shows last-known values
+// instantly. `available` is false for API-key / 3P-provider sessions.
+type AccountInfo = { email?: string; subscriptionType?: string };
+type LimitWindow = {
+  label: string;
+  utilization: number; // 0–100
+  resetsAt: number | null; // epoch ms
+};
+type UsageSnapshot = {
+  plan: string | null; // e.g. "Claude Max"
+  email?: string;
+  available: boolean;
+  session: LimitWindow | null; // five_hour
+  weeklyAll: LimitWindow | null; // seven_day (all models)
+  weeklyModels: LimitWindow[]; // per-model weekly windows
+  updatedAt: number;
+};
+
+let lastUsage: UsageSnapshot | null = null;
+
+function usageFile(): string {
+  return path.join(app.getPath('userData'), 'usage.json');
+}
+function loadUsageCache(): void {
+  try {
+    lastUsage = JSON.parse(fs.readFileSync(usageFile(), 'utf8'));
+  } catch {
+    /* nothing cached yet */
+  }
+}
+function saveUsageCache(): void {
+  try {
+    fs.writeFileSync(usageFile(), JSON.stringify(lastUsage, null, 2));
+  } catch {
+    /* best effort */
+  }
+}
+
+type RawWindow = { utilization?: number | null; resets_at?: string | null };
+function toWindow(label: string, w: RawWindow | null | undefined): LimitWindow | null {
+  if (!w || typeof w.utilization !== 'number') return null;
+  const t = w.resets_at ? Date.parse(w.resets_at) : NaN;
+  return { label, utilization: w.utilization, resetsAt: Number.isNaN(t) ? null : t };
+}
+
+// One throwaway query (no user turn → no tokens) yields both the account
+// (plan/email) and the `/usage` rate-limit windows.
+async function fetchUsageSnapshot(): Promise<UsageSnapshot | null> {
+  try {
+    // Keep the input stream OPEN (never yields, never ends) so the SDK doesn't
+    // close the query before the network-backed usage() call responds — an empty
+    // generator ends input immediately and the query closes mid-request. We tear
+    // it down with interrupt() once we have the data.
+    async function* keepOpen(): AsyncGenerator<SDKUserMessage> {
+      await new Promise<void>(() => {});
+    }
+    const q = query({ prompt: keepOpen(), options: { settingSources: [] } });
+    const account = (await q.accountInfo().catch((): null => null)) as AccountInfo | null;
+    // Experimental SDK method — shape is loose on purpose; guard every field.
+    const u = (await (
+      q as unknown as {
+        usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET?: () => Promise<unknown>;
+      }
+    ).usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET?.().catch(
+      (): null => null,
+    )) as Record<string, unknown> | null;
+    q.interrupt().catch((): void => {});
+
+    const rl = (u?.rate_limits ?? {}) as Record<string, RawWindow | null | undefined> & {
+      model_scoped?: Array<RawWindow & { display_name?: string }>;
+    };
+    const weeklyModels: LimitWindow[] = [];
+    const opus = toWindow('Opus', rl.seven_day_opus);
+    if (opus) weeklyModels.push(opus);
+    const sonnet = toWindow('Sonnet', rl.seven_day_sonnet);
+    if (sonnet) weeklyModels.push(sonnet);
+    for (const m of rl.model_scoped ?? []) {
+      const w = toWindow(String(m?.display_name ?? 'Model'), m);
+      if (w) weeklyModels.push(w);
+    }
+
+    lastUsage = {
+      plan:
+        account?.subscriptionType ??
+        (typeof u?.subscription_type === 'string' ? u.subscription_type : null),
+      email: account?.email,
+      available: u?.rate_limits_available === true,
+      session: toWindow('Current session', rl.five_hour),
+      weeklyAll: toWindow('All models', rl.seven_day),
+      weeklyModels,
+      updatedAt: Date.now(),
+    };
+    saveUsageCache();
+    return lastUsage;
+  } catch {
+    return lastUsage;
+  }
+}
+
+// Fetch fresh (the refresh button); or return whatever's cached instantly.
+ipcMain.handle('system:usage', () => fetchUsageSnapshot());
+ipcMain.handle('system:usageCached', () => lastUsage);
+
 ipcMain.handle('system:installHomebrew', async () => {
   const script = `#!/bin/bash
 echo "Installing Homebrew for Mocca."
@@ -2419,6 +2527,8 @@ let scheduleTimer: ReturnType<typeof setInterval> | null = null;
 app.on('ready', () => {
   if (!scheduleTimer) scheduleTimer = setInterval(() => void tickSchedules(), 30_000);
   startViewServer();
+  loadUsageCache();
+  void fetchUsageSnapshot();
 });
 
 ipcMain.handle('view:baseUrl', () => viewBaseUrl());

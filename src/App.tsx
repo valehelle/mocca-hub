@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -53,6 +54,60 @@ function timeUntil(ts: number): string {
   if (s < 86400) return `in ${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
   return `in ${Math.floor(s / 86400)}d`;
 }
+// Utilization clamped to a whole 0–100 percent.
+function pct(u: number): number {
+  return Math.max(0, Math.min(100, Math.round(u)));
+}
+// "Resets in 3 hr 53 min" — relative, for the rolling session window.
+function resetsIn(ms: number | null): string {
+  if (!ms) return '';
+  const s = Math.floor((ms - Date.now()) / 1000);
+  if (s <= 0) return 'Resets now';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return `Resets in ${d} day${d === 1 ? '' : 's'}`;
+  }
+  if (h > 0) return `Resets in ${h} hr ${m} min`;
+  return `Resets in ${m} min`;
+}
+// "Resets Wed 8:00 PM" — absolute weekday + time, for weekly windows.
+function resetsAt(ms: number | null): string {
+  if (!ms) return '';
+  const d = new Date(ms);
+  const day = d.toLocaleDateString(undefined, { weekday: 'short' });
+  const time = d.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  return `Resets ${day} ${time}`;
+}
+// A humanized plan name: "max" → "Max", "Claude Max" as-is.
+function prettyPlan(p: string | null): string {
+  if (!p) return '';
+  if (/claude/i.test(p)) return p;
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
+// One usage window: name + % on a row, a utilization bar, and a sub-line.
+function UsageWindow({ w, sub }: { w: LimitWindow; sub: string }) {
+  const p = pct(w.utilization);
+  return (
+    <div className="usage__win">
+      <div className="usage__row">
+        <span className="usage__name">{w.label}</span>
+        <span className="usage__pct">{p}% used</span>
+      </div>
+      <div className="usage__bar">
+        <span
+          className={p >= 90 ? 'is-over' : p >= 75 ? 'is-warn' : ''}
+          style={{ width: `${p}%` }}
+        />
+      </div>
+      {sub && <div className="usage__sub">{sub}</div>}
+    </div>
+  );
+}
 type McpEntry = {
   name: string;
   description?: string;
@@ -78,6 +133,20 @@ type FileView = {
   path: string;
 };
 type View = 'run' | 'marketplace';
+type LimitWindow = {
+  label: string;
+  utilization: number;
+  resetsAt: number | null;
+};
+type UsageSnapshot = {
+  plan: string | null;
+  email?: string;
+  available: boolean;
+  session: LimitWindow | null;
+  weeklyAll: LimitWindow | null;
+  weeklyModels: LimitWindow[];
+  updatedAt: number;
+};
 
 function fmtSize(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -282,6 +351,9 @@ export default function App() {
   const [cmdExpanded, setCmdExpanded] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Plan usage limits (the /usage panel), shown in Settings.
+  const [usage, setUsage] = useState<UsageSnapshot | null>(null);
+  const [usageBusy, setUsageBusy] = useState(false);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [schedPrompt, setSchedPrompt] = useState('');
   const [schedKind, setSchedKind] = useState<'daily' | 'interval'>('daily');
@@ -670,6 +742,26 @@ export default function App() {
     refreshFiles(selectedId, '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
+
+  // Show cached usage limits immediately on load.
+  useEffect(() => {
+    window.system.usageCached().then((u) => u && setUsage(u)).catch(() => {});
+  }, []);
+
+  // Pull fresh usage limits (also the Settings refresh button).
+  const refreshUsage = useCallback(() => {
+    setUsageBusy(true);
+    window.system
+      .usage()
+      .then((u) => u && setUsage(u))
+      .catch(() => {})
+      .finally(() => setUsageBusy(false));
+  }, []);
+
+  // Refresh when Settings opens, so the numbers are current on view.
+  useEffect(() => {
+    if (settingsOpen) refreshUsage();
+  }, [settingsOpen, refreshUsage]);
 
   // Advance the live "Thinking… Ns" counters while anything is running.
   useEffect(() => {
@@ -2589,6 +2681,60 @@ export default function App() {
               {selected.author && <div>Author · {selected.author}</div>}
             </div>
 
+            {usage && usage.available && (
+              <div className="sched">
+                <div className="usage__head">
+                  <span className="usage__title">Plan usage limits</span>
+                  {usage.plan && (
+                    <span className="usage__plan">{prettyPlan(usage.plan)}</span>
+                  )}
+                </div>
+
+                {usage.session && (
+                  <UsageWindow
+                    w={usage.session}
+                    sub={resetsIn(usage.session.resetsAt)}
+                  />
+                )}
+
+                {(usage.weeklyAll || usage.weeklyModels.length > 0) && (
+                  <>
+                    <div className="usage__section">Weekly limits</div>
+                    {usage.weeklyAll && (
+                      <UsageWindow
+                        w={usage.weeklyAll}
+                        sub={resetsAt(usage.weeklyAll.resetsAt)}
+                      />
+                    )}
+                    {usage.weeklyModels.map((w) => (
+                      <UsageWindow
+                        key={w.label}
+                        w={w}
+                        sub={
+                          pct(w.utilization) === 0
+                            ? `You haven’t used ${w.label} yet`
+                            : resetsAt(w.resetsAt)
+                        }
+                      />
+                    ))}
+                  </>
+                )}
+
+                <div className="usage__foot">
+                  <span>Last updated: {timeAgo(usage.updatedAt) || 'just now'}</span>
+                  <button
+                    className="usage__refresh"
+                    onClick={refreshUsage}
+                    disabled={usageBusy}
+                    title="Refresh"
+                    aria-label="Refresh usage"
+                  >
+                    ↻
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="sched">
               <div className="sched__head">Connected tools</div>
               {mcpList.length > 0 &&
@@ -2880,6 +3026,19 @@ export default function App() {
                   </div>
                 </>
               )}
+            </div>
+
+            <div className="modal__credit">
+              Mocca — made by{' '}
+              <button
+                className="modal__link"
+                onClick={() =>
+                  window.shell.openExternal('https://github.com/valehelle')
+                }
+                title="Open Hazmi’s GitHub profile"
+              >
+                Hazmi
+              </button>
             </div>
           </div>
         </div>

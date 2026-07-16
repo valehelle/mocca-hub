@@ -211,12 +211,31 @@ contextBridge.exposeInMainWorld('approvals', {
     ipcRenderer.invoke('approvals:revoke', agentId, category),
 });
 
+type LimitWindow = {
+  label: string;
+  utilization: number;
+  resetsAt: number | null;
+};
+type UsageSnapshot = {
+  plan: string | null;
+  email?: string;
+  available: boolean;
+  session: LimitWindow | null;
+  weeklyAll: LimitWindow | null;
+  weeklyModels: LimitWindow[];
+  updatedAt: number;
+};
+
 contextBridge.exposeInMainWorld('system', {
   hasHomebrew: (): Promise<boolean> => ipcRenderer.invoke('system:hasHomebrew'),
   installHomebrew: (): Promise<void> =>
     ipcRenderer.invoke('system:installHomebrew'),
   authStatus: (): Promise<{ ok: boolean; method: 'apikey' | 'oauth' | 'none' }> =>
     ipcRenderer.invoke('system:authStatus'),
+  // Plan usage limits (the /usage panel data) — for Settings.
+  usage: (): Promise<UsageSnapshot | null> => ipcRenderer.invoke('system:usage'),
+  usageCached: (): Promise<UsageSnapshot | null> =>
+    ipcRenderer.invoke('system:usageCached'),
 });
 
 type Schedule = {

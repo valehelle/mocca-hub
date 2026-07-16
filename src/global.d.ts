@@ -1,6 +1,20 @@
 export {};
 
 type Line = { role: 'agent' | 'system' | 'tool' | 'thinking'; text: string };
+type LimitWindow = {
+  label: string;
+  utilization: number;
+  resetsAt: number | null;
+};
+type UsageSnapshot = {
+  plan: string | null;
+  email?: string;
+  available: boolean;
+  session: LimitWindow | null;
+  weeklyAll: LimitWindow | null;
+  weeklyModels: LimitWindow[];
+  updatedAt: number;
+};
 type RunPayload = {
   task: string;
   instructions: string;
@@ -133,6 +147,8 @@ declare global {
         ok: boolean;
         method: 'apikey' | 'oauth' | 'none';
       }>;
+      usage: () => Promise<UsageSnapshot | null>;
+      usageCached: () => Promise<UsageSnapshot | null>;
     };
     approvals: {
       list: (
