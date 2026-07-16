@@ -1962,6 +1962,13 @@ function makeInputStream() {
         queue.push(toMsg(text));
       }
     },
+    // Drop anything queued but not yet started. Stop has to mean stop: without
+    // this, a message typed while the agent was working becomes a fresh turn the
+    // moment we interrupt the current one, so the agent just carries on and the
+    // button looks broken.
+    clear() {
+      queue.length = 0;
+    },
     close() {
       closed = true;
       if (pending) {
@@ -2383,6 +2390,9 @@ function startSession(
     agentId,
     push: input.push,
     interrupt: () => {
+      // Order matters: drop queued turns FIRST, so interrupting the live one
+      // can't hand straight over to a message the user typed while it worked.
+      input.clear();
       q.interrupt().catch((): void => {});
     },
     close: () => input.close(),

@@ -533,6 +533,11 @@ export default function App() {
   }
   // ms timestamp when each thread's thinking block started (null = not thinking)
   const thinkStartRef = useRef<Record<string, number | null>>({});
+  // Threads the user just stopped. interrupt() is async, so stream events
+  // already on the wire keep arriving after the click — and a late stream-start
+  // would append a line that streams forever, since its stream-end never comes.
+  // Ignore those until the thread runs again.
+  const stoppedRef = useRef<Record<string, boolean>>({});
   const [, setTick] = useState(0); // re-render to advance live "Thinking… Ns"
   const endRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -682,6 +687,7 @@ export default function App() {
         setLogs((ls) => (ls[tid] ? ls : { ...ls, [tid]: (t?.log as LogLine[]) ?? [] }));
         setSessionIds((m) => ({ ...m, [tid]: t?.sessionId ?? null }));
       }
+      stoppedRef.current[tid] = false; // a scheduled run restarts this thread
       outstandingRef.current[tid] = (outstandingRef.current[tid] ?? 0) + 1;
       setRunningMap((m) => ({ ...m, [tid]: true }));
       setAwaitingMap((m) => ({ ...m, [tid]: true }));
@@ -689,6 +695,7 @@ export default function App() {
     });
 
     const offStreamStart = window.agent.onStreamStart((tid, kind) => {
+      if (stoppedRef.current[tid]) return; // late event after Stop
       setAwaitingMap((m) => ({ ...m, [tid]: false }));
       append(tid, {
         role: kind === 'text' ? 'agent' : 'thinking',
@@ -700,9 +707,11 @@ export default function App() {
       }
     });
     const offStreamDelta = window.agent.onStreamDelta((tid, _kind, text) => {
+      if (stoppedRef.current[tid]) return;
       patchLast(tid, (last) => ({ ...last, text: last.text + text }));
     });
     const offStreamEnd = window.agent.onStreamEnd((tid, kind) => {
+      if (stoppedRef.current[tid]) return;
       const start = thinkStartRef.current[tid];
       const seconds =
         kind === 'thinking' && start
@@ -1301,6 +1310,7 @@ export default function App() {
       (attached.length ? `📎 Attached: ${attached.join(', ')}\n\n` : '') +
       (typed || `I've attached ${attached.join(', ')}. Please take a look.`);
 
+    stoppedRef.current[tid] = false; // running again — accept stream events
     outstandingRef.current[tid] = (outstandingRef.current[tid] ?? 0) + 1;
     setRunningMap((m) => ({ ...m, [tid]: true }));
     setAwaitingMap((m) => ({ ...m, [tid]: true }));
@@ -1406,7 +1416,21 @@ export default function App() {
   }, [selectedId]);
 
   function stopAgent() {
-    if (threadId) window.agent.stop(threadId);
+    if (!threadId) return;
+    const tid = threadId;
+    window.agent.stop(tid);
+    stoppedRef.current[tid] = true;
+    // Stop cancels the live turn AND anything queued behind it, so the thread is
+    // idle right now. Reset rather than waiting to count a `done` per outstanding
+    // turn: messages sent while the agent was working are dropped on stop, so
+    // those `done`s never arrive and the UI would sit on "working" forever.
+    outstandingRef.current[tid] = 0;
+    thinkStartRef.current[tid] = null;
+    finalizeStreaming(tid);
+    setAwaitingMap((m) => ({ ...m, [tid]: false }));
+    setRunningMap((m) => ({ ...m, [tid]: false }));
+    const owner = threadAgentRef.current[tid];
+    if (owner) setComposing((c) => (c === owner ? null : c));
   }
 
   function fillComposer(text: string) {
