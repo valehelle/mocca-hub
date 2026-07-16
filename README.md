@@ -147,6 +147,24 @@ Each entry is a folder under [`registry/`](registry/) with an `agent.json`:
 `source` points at the Claude Code plugin to clone on install. Open a PR to add
 yours.
 
-## License
+## Licenses
 
-MIT © [Hazmi Irfan](https://github.com/valehelle)
+**Mocca's own code is [MIT](LICENSE)** — © 2026 [Hazmi Irfan](https://github.com/valehelle).
+Use it, fork it, ship it; keep the notice; no warranty.
+
+That covers this repo. It deliberately does **not** cover two things it sits on top of:
+
+- **The Claude Agent SDK.** [`@anthropic-ai/claude-agent-sdk`](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk)
+  is © Anthropic PBC, all rights reserved — it is not open source, and its use is
+  governed by [Anthropic's legal agreements](https://code.claude.com/docs/en/legal-and-compliance),
+  not by this MIT licence. Mocca depends on it and ships it inside the app; running
+  an agent also runs on your own Claude account, under those same terms.
+- **The agents in the marketplace.** Every entry in [`registry/`](registry/) is just
+  metadata pointing at someone else's Claude Code plugin. Installing clones that
+  repo, and the plugin stays under whatever licence its author chose — Mocca doesn't
+  relicense anyone's work. Authors are credited on each marketplace card, which links
+  back to the source repo.
+
+Other components shipped inside the app: Electron, React, and marked (MIT);
+[`@playwright/mcp`](https://github.com/microsoft/playwright-mcp) and
+electron-squirrel-startup (Apache-2.0).
