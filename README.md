@@ -23,7 +23,7 @@ to build in. Powered by the [Claude Agent SDK](https://www.npmjs.com/package/@an
 >
 > A Pro/Max **subscription won't work in the app**, by design: Anthropic doesn't
 > permit third-party apps to use Claude.ai logins, so the released build has no
-> such path. See [Licences](#licences).
+> such path — [here's why](#can-i-use-my-existing-claude-promax-subscription).
 
 ---
 
@@ -106,25 +106,34 @@ Sentry, Stripe) from a catalog, by name, or bundled by the plugin.
   first launch. It's encrypted with your Mac's keychain (never leaves the
   machine), and Anthropic bills your account per token.
 
-### Why not my Pro/Max subscription?
+## Can I use my existing Claude Pro/Max subscription?
 
-Because Anthropic doesn't allow it, and it's not a rule Mocca gets to bend on your
-behalf:
+**Not in the released app — no.** It's the first thing everyone asks, and the
+answer isn't Mocca being precious about it. Anthropic doesn't permit it:
 
 > Developers building products or services that interact with Claude's
 > capabilities, including those using the Agent SDK, **should use API key
 > authentication**… **Anthropic does not permit third-party developers to offer
 > Claude.ai login or to route requests through Free, Pro, or Max plan credentials
 > on behalf of their users.**
+>
+> Anthropic reserves the right to take measures to enforce these restrictions and
+> may do so **without prior notice**.
 > — [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)
 
-Enforcement is account-level and can happen without notice, so shipping that path
-would put *your* account at risk, not Mocca's. The released app therefore has no
-subscription path at all — it's gated on the build, not on a checkbox.
+Read that last line again: enforcement is **account-level and without notice**. If
+Mocca shipped a "use my subscription" button, the account that gets restricted is
+**yours**, not Mocca's. Handing you that risk to save a few dollars in API credit
+isn't a trade worth making — so the released build has no subscription path at
+all. It's gated on the build itself, not a setting you can flip.
 
-If you run Mocca **from source** it will use a `claude` sign-in already on your
-machine, since that's you using the Agent SDK individually rather than an app
-doing it for you. It warns you, and it's still your call.
+**If you build from source, it works differently.** A source build will use a
+`claude` sign-in already on your machine, because at that point it's *you* using
+the Agent SDK on your own account — not an app doing it on your behalf. The same
+policy contemplates "ordinary, individual usage of Claude Code and the Agent SDK."
+Mocca shows you the warning above and then gets out of the way.
+
+That's your account, your machine, and your call — just make it knowingly.
 
 ## Install
 
