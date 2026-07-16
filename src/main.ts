@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, safeStorage } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
@@ -578,37 +578,105 @@ ipcMain.handle('shell:openExternal', async (_e, url: string) => {
 // Terminal so the user just enters their password once.
 ipcMain.handle('system:hasHomebrew', () => realBrew() !== null);
 
-// Mocca runs agents through the Claude Agent SDK, which needs Claude Code auth:
-// an ANTHROPIC_API_KEY, a signed-in Claude Code session (OAuth token — a creds
-// file on Linux/Windows, the macOS Keychain on Mac). Without any of these, no
-// agent will run, so we check up front and guide the user instead of failing on
-// their first message.
+// ── Auth ─────────────────────────────────────────────────────────────────────
+// Mocca runs agents through the Claude Agent SDK, which needs an API key from
+// the Claude Console. That is the ONLY method the shipped app supports, and the
+// only one Anthropic permits for third-party products built on the Agent SDK:
+//
+//   "Developers building products or services that interact with Claude's
+//    capabilities, including those using the Agent SDK, should use API key
+//    authentication… Anthropic does not permit third-party developers to offer
+//    Claude.ai login or to route requests through Free, Pro, or Max plan
+//    credentials on behalf of their users."
+//   — https://code.claude.com/docs/en/legal-and-compliance
+//
+// A Claude Code OAuth sign-in (Pro/Max) is therefore accepted ONLY in an
+// unpackaged source build — i.e. someone running Mocca themselves, which the
+// same policy contemplates as "ordinary, individual usage of… the Agent SDK".
+// The distributed DMG has no such path: `app.isPackaged` is the gate, so this is
+// a property of the build rather than a promise in a README.
+const SUBSCRIPTION_AUTH_ALLOWED = (): boolean => !app.isPackaged;
+
+// The user's key, encrypted at rest with the OS keychain via safeStorage.
+function keyFile(): string {
+  return path.join(app.getPath('userData'), 'auth.bin');
+}
+function saveApiKey(key: string): void {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    fs.rmSync(keyFile(), { force: true });
+    return;
+  }
+  // safeStorage needs the app ready; it is by the time any of this runs.
+  const buf = safeStorage.isEncryptionAvailable()
+    ? safeStorage.encryptString(trimmed)
+    : Buffer.from(trimmed, 'utf8'); // no keychain (rare) — still contained to userData
+  fs.writeFileSync(keyFile(), buf, { mode: 0o600 });
+}
+function loadApiKey(): string | null {
+  try {
+    const buf = fs.readFileSync(keyFile());
+    const key = safeStorage.isEncryptionAvailable()
+      ? safeStorage.decryptString(buf)
+      : buf.toString('utf8');
+    return key.trim() || null;
+  } catch {
+    return null;
+  }
+}
+// A key the user pasted in beats one inherited from the environment. (A GUI app
+// launched from Finder inherits no shell env at all, so the stored key is the
+// only one most users will ever have.)
+function resolveApiKey(): string | null {
+  return loadApiKey() ?? (process.env.ANTHROPIC_API_KEY?.trim() || null);
+}
+
 async function claudeAuthStatus(): Promise<{
   ok: boolean;
   method: 'apikey' | 'oauth' | 'none';
+  canUseSubscription: boolean;
 }> {
-  if (process.env.ANTHROPIC_API_KEY) return { ok: true, method: 'apikey' };
-  // OAuth credentials file (Linux/Windows, and some macOS installs).
-  const credFile = path.join(app.getPath('home'), '.claude', '.credentials.json');
-  if (fs.existsSync(credFile)) return { ok: true, method: 'oauth' };
-  // macOS stores the Claude Code token in the login Keychain. Reading only the
-  // item's attributes (not the secret) doesn't trigger a permission prompt.
-  if (process.platform === 'darwin') {
-    try {
-      await execFileP('security', [
-        'find-generic-password',
-        '-s',
-        'Claude Code-credentials',
-      ]);
-      return { ok: true, method: 'oauth' };
-    } catch {
-      /* not found */
+  const canUseSubscription = SUBSCRIPTION_AUTH_ALLOWED();
+  if (resolveApiKey()) return { ok: true, method: 'apikey', canUseSubscription };
+  // Subscription sign-in: source builds only — never the shipped app.
+  if (canUseSubscription) {
+    // OAuth credentials file (Linux/Windows, and some macOS installs).
+    const credFile = path.join(app.getPath('home'), '.claude', '.credentials.json');
+    if (fs.existsSync(credFile))
+      return { ok: true, method: 'oauth', canUseSubscription };
+    // macOS stores the Claude Code token in the login Keychain. Reading only the
+    // item's attributes (not the secret) doesn't trigger a permission prompt.
+    if (process.platform === 'darwin') {
+      try {
+        await execFileP('security', [
+          'find-generic-password',
+          '-s',
+          'Claude Code-credentials',
+        ]);
+        return { ok: true, method: 'oauth', canUseSubscription };
+      } catch {
+        /* not found */
+      }
     }
   }
-  return { ok: false, method: 'none' };
+  return { ok: false, method: 'none', canUseSubscription };
 }
 
 ipcMain.handle('system:authStatus', () => claudeAuthStatus());
+
+// Save / clear the API key. Returns the fresh status so the UI can re-gate.
+ipcMain.handle('auth:setKey', async (_e, key: string) => {
+  saveApiKey(String(key ?? ''));
+  // New credentials only take effect on a new session — restart every live one.
+  for (const [k, s] of sessions) {
+    s.close();
+    sessions.delete(k);
+  }
+  lastUsage = null;
+  void fetchUsageSnapshot();
+  return claudeAuthStatus();
+});
+ipcMain.handle('auth:hasStoredKey', () => !!loadApiKey());
 
 // ── Plan usage limits ────────────────────────────────────────────────────────
 // The data behind Claude Code's `/usage` panel, surfaced in Settings: the
@@ -663,6 +731,11 @@ function toWindow(label: string, w: RawWindow | null | undefined): LimitWindow |
 // One throwaway query (no user turn → no tokens) yields both the account
 // (plan/email) and the `/usage` rate-limit windows.
 async function fetchUsageSnapshot(): Promise<UsageSnapshot | null> {
+  const apiKey = resolveApiKey();
+  // Without a key, the shipped app has no sanctioned way to call Claude — don't
+  // quietly spin up a query that would run on whatever Claude Code login is on
+  // the machine just to populate a Settings panel.
+  if (!apiKey && !SUBSCRIPTION_AUTH_ALLOWED()) return null;
   try {
     // Keep the input stream OPEN (never yields, never ends) so the SDK doesn't
     // close the query before the network-backed usage() call responds — an empty
@@ -671,7 +744,16 @@ async function fetchUsageSnapshot(): Promise<UsageSnapshot | null> {
     async function* keepOpen(): AsyncGenerator<SDKUserMessage> {
       await new Promise<void>(() => {});
     }
-    const q = query({ prompt: keepOpen(), options: { settingSources: [] } });
+    const q = query({
+      prompt: keepOpen(),
+      options: {
+        settingSources: [],
+        env: {
+          ...process.env,
+          ...(apiKey ? { ANTHROPIC_API_KEY: apiKey } : {}),
+        },
+      },
+    });
     const account = (await q.accountInfo().catch((): null => null)) as AccountInfo | null;
     // Experimental SDK method — shape is loose on purpose; guard every field.
     const u = (await (
@@ -2182,8 +2264,14 @@ function startSession(
       },
       // Redirect every package manager's cache + global-install target into the
       // workspace so installs succeed *inside* it instead of hitting a
-      // sandbox-blocked system path.
-      env: { ...process.env, ...containEnv(cwd) },
+      // sandbox-blocked system path. The user's API key is injected here too:
+      // a Finder-launched app inherits no shell env, so without this the SDK
+      // would fall through to whatever Claude Code login is on the machine.
+      env: {
+        ...process.env,
+        ...(resolveApiKey() ? { ANTHROPIC_API_KEY: resolveApiKey() as string } : {}),
+        ...containEnv(cwd),
+      },
       // Gate every Bash call. Routine commands run sandboxed with no prompt; a
       // command that installs system software (or explicitly asks to leave the
       // sandbox) pauses for the user's approval. On approval we set

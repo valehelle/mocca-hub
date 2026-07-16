@@ -211,6 +211,11 @@ contextBridge.exposeInMainWorld('approvals', {
     ipcRenderer.invoke('approvals:revoke', agentId, category),
 });
 
+type AuthStatus = {
+  ok: boolean;
+  method: 'apikey' | 'oauth' | 'none';
+  canUseSubscription: boolean;
+};
 type LimitWindow = {
   label: string;
   utilization: number;
@@ -230,8 +235,11 @@ contextBridge.exposeInMainWorld('system', {
   hasHomebrew: (): Promise<boolean> => ipcRenderer.invoke('system:hasHomebrew'),
   installHomebrew: (): Promise<void> =>
     ipcRenderer.invoke('system:installHomebrew'),
-  authStatus: (): Promise<{ ok: boolean; method: 'apikey' | 'oauth' | 'none' }> =>
-    ipcRenderer.invoke('system:authStatus'),
+  authStatus: (): Promise<AuthStatus> => ipcRenderer.invoke('system:authStatus'),
+  // Save (or clear, with '') the Claude Console API key. Returns fresh status.
+  setKey: (key: string): Promise<AuthStatus> =>
+    ipcRenderer.invoke('auth:setKey', key),
+  hasStoredKey: (): Promise<boolean> => ipcRenderer.invoke('auth:hasStoredKey'),
   // Plan usage limits (the /usage panel data) — for Settings.
   usage: (): Promise<UsageSnapshot | null> => ipcRenderer.invoke('system:usage'),
   usageCached: (): Promise<UsageSnapshot | null> =>

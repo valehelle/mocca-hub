@@ -104,6 +104,77 @@ body {
   opacity: 0.6;
   cursor: default;
 }
+.setup__btn--ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 18px;
+  font-size: 13px;
+}
+.setup__btn--ghost:hover:not(:disabled) {
+  background: var(--panel-2);
+  border-color: var(--muted);
+}
+.setup__input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.setup__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.setup__error {
+  color: #d9575a;
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: -6px 0 14px;
+}
+.setup__hint {
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+  margin: 16px 0 0;
+}
+.setup__hint code {
+  background: var(--panel-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.setup__alt {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+.setup__alt-head {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+/* The subscription path is not permitted for third-party apps — make the
+   warning read like a warning, not like fine print. */
+.setup__warn {
+  background: rgba(217, 87, 90, 0.1);
+  border: 1px solid rgba(217, 87, 90, 0.4);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #e8888a;
+  font-size: 12.5px;
+  line-height: 1.55;
+  margin: 0 0 12px;
+  text-align: left;
+}
 
 /* ── Library (your installed agents) ───────────────────────────────────── */
 .library {

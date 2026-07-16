@@ -1,6 +1,11 @@
 export {};
 
 type Line = { role: 'agent' | 'system' | 'tool' | 'thinking'; text: string };
+type AuthStatus = {
+  ok: boolean;
+  method: 'apikey' | 'oauth' | 'none';
+  canUseSubscription: boolean;
+};
 type LimitWindow = {
   label: string;
   utilization: number;
@@ -143,10 +148,9 @@ declare global {
     system: {
       hasHomebrew: () => Promise<boolean>;
       installHomebrew: () => Promise<void>;
-      authStatus: () => Promise<{
-        ok: boolean;
-        method: 'apikey' | 'oauth' | 'none';
-      }>;
+      authStatus: () => Promise<AuthStatus>;
+      setKey: (key: string) => Promise<AuthStatus>;
+      hasStoredKey: () => Promise<boolean>;
       usage: () => Promise<UsageSnapshot | null>;
       usageCached: () => Promise<UsageSnapshot | null>;
     };

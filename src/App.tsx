@@ -133,6 +133,11 @@ type FileView = {
   path: string;
 };
 type View = 'run' | 'marketplace';
+type AuthStatus = {
+  ok: boolean;
+  method: 'apikey' | 'oauth' | 'none';
+  canUseSubscription: boolean; // true only in an unpackaged source build
+};
 type LimitWindow = {
   label: string;
   utilization: number;
@@ -315,19 +320,44 @@ export default function App() {
   const [installed, setInstalled] = useState<Agent[]>([]);
   const [market, setMarket] = useState<Agent[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
-  // Whether Claude Code auth is available at all — Mocca can't run agents without
-  // it. null = still checking; false = show the setup screen.
-  const [authOk, setAuthOk] = useState<boolean | null>(null);
+  // Mocca can't run agents without Claude auth. null = still checking;
+  // ok === false = show the setup screen.
+  const [auth, setAuth] = useState<AuthStatus | null>(null);
+  const authOk = auth === null ? null : auth.ok;
   const [authChecking, setAuthChecking] = useState(false);
+  const [keyInput, setKeyInput] = useState('');
+  const [keyError, setKeyError] = useState<string | null>(null);
   const checkAuth = () => {
     setAuthChecking(true);
     window.system
       .authStatus()
-      .then((s) => setAuthOk(s.ok))
-      .catch(() => setAuthOk(false))
+      .then(setAuth)
+      .catch(() =>
+        setAuth({ ok: false, method: 'none', canUseSubscription: false }),
+      )
       .finally(() => setAuthChecking(false));
   };
   useEffect(checkAuth, []);
+  // Save the pasted Claude Console key. Keys start `sk-ant-`; check before
+  // storing so a typo surfaces here instead of as a failed first message.
+  function saveKey() {
+    const k = keyInput.trim();
+    if (!k.startsWith('sk-ant-')) {
+      setKeyError('That doesn’t look like a Claude API key — they start with “sk-ant-”.');
+      return;
+    }
+    setKeyError(null);
+    setAuthChecking(true);
+    window.system
+      .setKey(k)
+      .then((s) => {
+        setAuth(s);
+        if (s.ok) setKeyInput('');
+        else setKeyError('Mocca couldn’t use that key. Check it and try again.');
+      })
+      .catch(() => setKeyError('Could not save the key.'))
+      .finally(() => setAuthChecking(false));
+  }
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [ghRepo, setGhRepo] = useState('');
   // Marketplace browsing: free-text search + category filter.
@@ -1434,42 +1464,74 @@ export default function App() {
     }
   }
 
-  // Mocca can't do anything without Claude Code auth — gate the whole app on it.
+  // Mocca can't do anything without Claude auth — gate the whole app on it.
   if (authOk === false) {
     return (
       <div className="setup">
         <div className="setup__card">
           <div className="setup__logo">☕️</div>
-          <h1 className="setup__title">Mocca runs on Claude Code</h1>
+          <h1 className="setup__title">Add your Claude API key</h1>
           <p className="setup__lead">
-            Mocca uses your Claude Code sign-in to run its agents. We couldn’t
-            find it on this machine — set it up once and you’re good.
+            Mocca runs its agents on your own Claude account. Paste a key from the
+            Claude Console — it’s stored encrypted on this Mac and never leaves it.
           </p>
-          <ol className="setup__steps">
-            <li>
-              Install Claude Code from{' '}
-              <button
-                className="setup__link"
-                onClick={() =>
-                  window.shell.openExternal('https://claude.com/code')
-                }
-              >
-                claude.com/code
-              </button>
-            </li>
-            <li>
-              In a terminal, run <code>claude</code> and sign in (or set an{' '}
-              <code>ANTHROPIC_API_KEY</code>).
-            </li>
-            <li>Come back and re-check.</li>
-          </ol>
+          <input
+            className="setup__input"
+            type="password"
+            value={keyInput}
+            onChange={(e) => {
+              setKeyInput(e.target.value);
+              setKeyError(null);
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && saveKey()}
+            placeholder="sk-ant-…"
+            autoFocus
+            spellCheck={false}
+          />
+          {keyError && <div className="setup__error">{keyError}</div>}
           <button
             className="setup__btn"
-            onClick={checkAuth}
-            disabled={authChecking}
+            onClick={saveKey}
+            disabled={authChecking || !keyInput.trim()}
           >
-            {authChecking ? 'Checking…' : 'Re-check'}
+            {authChecking ? 'Checking…' : 'Start using Mocca'}
           </button>
+          <p className="setup__hint">
+            Don’t have one?{' '}
+            <button
+              className="setup__link"
+              onClick={() =>
+                window.shell.openExternal('https://platform.claude.com/settings/keys')
+              }
+            >
+              Create a key in the Claude Console
+            </button>
+            . Usage is billed to your Anthropic account per token.
+          </p>
+
+          {/* Source builds only: someone running Mocca themselves may use their
+              own Claude Code sign-in — the shipped app has no such path. */}
+          {auth?.canUseSubscription && (
+            <div className="setup__alt">
+              <div className="setup__alt-head">Running from source</div>
+              <p className="setup__warn">
+                Using your Claude subscription with a third-party app isn’t
+                permitted by Anthropic. Your account could be restricted without
+                notice. Use an API key instead.
+              </p>
+              <p className="setup__hint">
+                If you sign in with <code>claude</code> in a terminal, this build
+                will pick that up and run without a key.
+              </p>
+              <button
+                className="setup__btn setup__btn--ghost"
+                onClick={checkAuth}
+                disabled={authChecking}
+              >
+                {authChecking ? 'Checking…' : 'Re-check sign-in'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -2680,6 +2742,36 @@ export default function App() {
               {selected.version && <div>Version · {selected.version}</div>}
               {selected.author && <div>Author · {selected.author}</div>}
             </div>
+
+            {auth?.ok && (
+              <div className="sched">
+                <div className="sched__head">Claude account</div>
+                <div className="sched__item">
+                  <div className="sched__info">
+                    <div className="sched__prompt">
+                      {auth.method === 'apikey' ? 'API key' : 'Claude subscription'}
+                    </div>
+                    <div className="sched__when">
+                      {auth.method === 'apikey'
+                        ? 'Stored encrypted on this Mac · billed per token'
+                        : 'Source build only — not permitted for distributed apps'}
+                    </div>
+                  </div>
+                  {auth.method === 'apikey' && (
+                    <div className="sched__actions">
+                      <button
+                        className="sched__btn"
+                        onClick={() =>
+                          window.system.setKey('').then(setAuth).catch(() => {})
+                        }
+                      >
+                        Replace key
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {usage && usage.available && (
               <div className="sched">
