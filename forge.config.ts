@@ -51,6 +51,41 @@ function notarizeOptions() {
   return undefined;
 }
 
+// The same credentials as CLI args for `xcrun notarytool`, or null when none are
+// configured. Prefers the keychain profile; falls back to env vars for CI.
+function notaryToolArgs(): string[] | null {
+  try {
+    execFileSync('xcrun', ['notarytool', 'history', '--keychain-profile', NOTARY_PROFILE], {
+      stdio: 'ignore',
+    });
+    return ['--keychain-profile', NOTARY_PROFILE];
+  } catch {
+    /* no profile */
+  }
+  if (process.env.APPLE_ID && process.env.APPLE_PASSWORD && process.env.APPLE_TEAM_ID) {
+    return [
+      '--apple-id', process.env.APPLE_ID,
+      '--password', process.env.APPLE_PASSWORD,
+      '--team-id', process.env.APPLE_TEAM_ID,
+    ];
+  }
+  return null;
+}
+
+// The "Developer ID Application: …" identity to sign the DMG with. Pinned by
+// APPLE_SIGN_IDENTITY, else auto-discovered from the login keychain.
+function developerIdIdentity(): string | undefined {
+  if (process.env.APPLE_SIGN_IDENTITY) return process.env.APPLE_SIGN_IDENTITY;
+  try {
+    const out = execFileSync('security', ['find-identity', '-v', '-p', 'codesigning'], {
+      encoding: 'utf8',
+    });
+    return out.match(/"(Developer ID Application:[^"]+)"/)?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
 const config: ForgeConfig = {
   packagerConfig: {
     // Everything above needs to be a real file on disk (the native binary must
@@ -120,6 +155,40 @@ const config: ForgeConfig = {
         ['install', '--omit=dev', '--no-package-lock', '--no-audit', '--no-fund'],
         { cwd: buildPath, stdio: 'inherit' },
       );
+    },
+
+    // Forge notarizes the .app during packaging, but NOT the .dmg wrapper it
+    // builds afterward — so a downloaded DMG (which carries the quarantine flag)
+    // could still prompt Gatekeeper. Sign → notarize → staple each DMG here so
+    // the download itself is accepted with no warning. Skipped (with a note) when
+    // no notary credentials are configured, so unsigned local builds still work.
+    postMake: async (_forgeConfig, makeResults) => {
+      if (process.platform !== 'darwin') return makeResults;
+      const notary = notaryToolArgs();
+      if (!notary) {
+        console.log('[postMake] No notary credentials — leaving DMG un-notarized.');
+        return makeResults;
+      }
+      const identity = developerIdIdentity();
+      const dmgs = makeResults
+        .flatMap((r) => r.artifacts)
+        .filter((a) => a.endsWith('.dmg'));
+      for (const dmg of dmgs) {
+        const name = path.basename(dmg);
+        if (identity) {
+          console.log(`[postMake] Signing ${name}`);
+          execFileSync('codesign', ['--force', '--timestamp', '--sign', identity, dmg], {
+            stdio: 'inherit',
+          });
+        }
+        console.log(`[postMake] Notarizing ${name} (waiting on Apple)…`);
+        execFileSync('xcrun', ['notarytool', 'submit', dmg, ...notary, '--wait'], {
+          stdio: 'inherit',
+        });
+        console.log(`[postMake] Stapling ${name}`);
+        execFileSync('xcrun', ['stapler', 'staple', dmg], { stdio: 'inherit' });
+      }
+      return makeResults;
     },
   },
   rebuildConfig: {},
