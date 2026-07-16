@@ -10,17 +10,20 @@ to build in. Powered by the [Claude Agent SDK](https://www.npmjs.com/package/@an
     <img alt="Download Mocca for macOS" src="https://img.shields.io/github/v/release/valehelle/mocca-hub?style=for-the-badge&label=%20Download%20for%20macOS&labelColor=0e0f13&color=d97757&logo=apple&logoColor=white">
   </a>
   <br>
-  <sub>Apple Silicon · signed &amp; notarized — no Gatekeeper warning · needs your own Claude access</sub>
+  <sub>Apple Silicon · signed &amp; notarized — no Gatekeeper warning · needs your own Claude API key</sub>
 </p>
 
 ![Mocca — asked in plain English, the agent builds a working player on the Canvas](assets/screenshot-canvas.png)
 
 > [!IMPORTANT]
-> **You need your own paid Claude access.** Mocca runs agents through the Claude
-> Agent SDK using *your* account — it does not ship a key and there is no free
-> tier. Sign in with a **Claude subscription (Pro or Max)** — the same login
-> Claude Code uses — or set an `ANTHROPIC_API_KEY` (billed per token). Without
-> one, no agent will run.
+> **You need your own Claude API key.** Mocca runs agents through the Claude
+> Agent SDK on *your* account — it ships no key and has no free tier. Paste a key
+> from the [Claude Console](https://platform.claude.com/settings/keys) on first
+> launch; it's stored encrypted on your Mac and usage is billed to you per token.
+>
+> A Pro/Max **subscription won't work in the app**, by design: Anthropic doesn't
+> permit third-party apps to use Claude.ai logins, so the released build has no
+> such path. See [Licences](#licences).
 
 ---
 
@@ -97,14 +100,31 @@ Sentry, Stripe) from a catalog, by name, or bundled by the plugin.
 ## Requirements
 
 - **macOS (Apple Silicon).** That's what's built and tested.
-- **A paid Claude account — required.** Mocca has no key of its own and no free
-  tier; every agent runs on *your* Claude access. Either:
-  - a **Claude subscription (Pro or Max)** — sign in once, the same way Claude
-    Code does (Mocca reads that login); or
-  - an **`ANTHROPIC_API_KEY`**, billed per token.
+- **A Claude API key — required.** Mocca has no key of its own and no free tier;
+  every agent runs on your own Claude account. Create one in the
+  [Claude Console](https://platform.claude.com/settings/keys) and paste it on
+  first launch. It's encrypted with your Mac's keychain (never leaves the
+  machine), and Anthropic bills your account per token.
 
-  Mocca checks on startup and tells you if it's missing. Settings shows your plan
-  and how much of your usage window you've used.
+### Why not my Pro/Max subscription?
+
+Because Anthropic doesn't allow it, and it's not a rule Mocca gets to bend on your
+behalf:
+
+> Developers building products or services that interact with Claude's
+> capabilities, including those using the Agent SDK, **should use API key
+> authentication**… **Anthropic does not permit third-party developers to offer
+> Claude.ai login or to route requests through Free, Pro, or Max plan credentials
+> on behalf of their users.**
+> — [Legal and compliance](https://code.claude.com/docs/en/legal-and-compliance)
+
+Enforcement is account-level and can happen without notice, so shipping that path
+would put *your* account at risk, not Mocca's. The released app therefore has no
+subscription path at all — it's gated on the build, not on a checkbox.
+
+If you run Mocca **from source** it will use a `claude` sign-in already on your
+machine, since that's you using the Agent SDK individually rather than an app
+doing it for you. It warns you, and it's still your call.
 
 ## Install
 
