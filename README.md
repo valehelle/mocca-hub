@@ -137,14 +137,46 @@ newer) only; Intel Macs aren't supported yet.
 
 ## Build from source
 
+**You'll need** macOS, a recent [Node](https://nodejs.org) (20+), and Xcode Command
+Line Tools (`xcode-select --install`).
+
 ```bash
+git clone https://github.com/valehelle/mocca-hub.git
+cd mocca-hub
 npm install
-npm start          # dev
-npm run make       # signed + notarized release → out/make
+npm start
 ```
 
-Releasing (signing, notarization, verification) is documented in
-[RELEASE.md](RELEASE.md).
+`npm start` launches the app with hot reload. Edits to the renderer
+(`src/App.tsx`, `src/index.css`) appear instantly; changes to `src/main.ts` or
+`src/preload.ts` are main-process code, so they need a restart (`Ctrl-C`, then
+`npm start` again).
+
+You still need auth — paste an API key on first launch, same as the released app.
+
+### Where things live
+
+The app is deliberately small — three files do almost everything:
+
+| Path | What's in it |
+|---|---|
+| `src/main.ts` | Main process: the agent runtime (Agent SDK sessions, streaming), per-agent workspaces, the Bash sandbox + approvals, the Canvas HTTP server and its injected design system, MCP wiring, schedules, auth. |
+| `src/App.tsx` | The entire UI: workspace library, chat, marketplace, Canvas panel, Settings. |
+| `src/preload.ts` | The `contextBridge` API — the only channel between the two. |
+| `registry/` | The bundled marketplace: one folder per agent, each an `agent.json`. |
+
+### Other commands
+
+```bash
+npm run package    # just the .app  → out/
+npm run make       # .dmg + .zip    → out/make
+npm run lint
+```
+
+> **Heads up:** packaging always code-signs, so `package` and `make` need an Apple
+> **Developer ID** certificate in your keychain — they'll fail without one.
+> `npm start` doesn't, so you can develop freely. Full signing + notarization setup
+> is in [RELEASE.md](RELEASE.md).
 
 ## Adding an agent to the marketplace
 
