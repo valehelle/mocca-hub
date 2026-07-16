@@ -16,48 +16,53 @@ agent, and chat with it — powered by the [Claude Agent SDK](https://www.npmjs.
 
 ## Why this exists
 
-Claude Code plugins and skills are genuinely good. The problem is where they live.
+Claude Code plugins and skills are genuinely good, and you no longer need a
+terminal to use Claude — good desktop apps exist. But three gaps remain, and
+they're what Mocca is for:
 
-Today a plugin is a GitHub repo you had to hear about, clone, and drive from a
-terminal with slash commands you're expected to memorize. That means:
+- **There's no shelf.** Plugins spread by tweets, READMEs, and word of mouth.
+  There's nowhere to browse what exists, see what one actually does, and install
+  it in a click — so most people never learn they exist.
+- **Artifacts aren't apps.** You can render a document. That's not a working
+  player that holds its own state, keeps playing while you work, and calls back
+  into the conversation.
+- **Tools are built around the developer, not the agent.** You get one
+  general-purpose assistant. Not: *this* one is a career coach — with its own
+  workspace, files, memory, tools, and schedule — sitting next to your DJ and
+  your tax helper.
 
-- **Nobody can find them.** There's no shelf to browse. Plugins spread by tweets,
-  READMEs, and word of mouth — so most people never learn they exist.
-- **Nobody outside a terminal can use them.** If your workflow isn't `git clone`,
-  the door is closed. A career coach or a tax helper shouldn't require a CLI.
-- **The answer is always a wall of text.** A terminal can print. It can't show you
-  a dashboard, a comparison, or a working player.
-
-Mocca fixes the *distribution and interface* problem — not by replacing those
-plugins, but by giving them a home. It installs the **real** Claude Code plugin
-(`plugin.json` + `SKILL.md`) straight from its repo and puts a GUI around it.
+Mocca doesn't replace those plugins; it gives them a home. It installs the
+**real** Claude Code plugin (`plugin.json` + `SKILL.md`) straight from its repo
+and builds the app around it.
 
 ## What it solves
 
-### 1. Plugins you can actually find
+### 1. A shelf you can browse
 A built-in marketplace with 28 curated agents, grouped by category (Career,
 Money, Work, Learning…). Open one and read what it *actually* does — its README,
 its skills, and the tools it brings with it — before you install. You can also
 install any Claude Code plugin straight from a GitHub repo (`owner/name`) or a
-local folder.
+local folder, or have Claude author a new one from a one-line brief.
 
 ![The Mocca marketplace — 28 agents, browsable by category, each linking to its source repo](assets/screenshot-marketplace.png)
 
-### 2. Agents that can do real work
-Each agent gets file tools, sandboxed Bash, web search — and a **headless browser**
-(Playwright). `WebFetch` only sees static HTML, so when a page is JavaScript-heavy
-or needs interaction (job boards, dashboards), the agent drives a real browser
-instead of giving up. Agents can also connect **MCP tools** per workspace — Linear,
-Notion, GitHub, Sentry, Stripe — from a catalog, by name, or bundled by the plugin.
-
-### 3. The Canvas — apps built on the fly
+### 2. The Canvas — apps, not artifacts
 Instead of walling the answer into chat, an agent writes a self-contained HTML app
 that runs **live in the panel**: a comparison, a dashboard, a timeline, a working
-music player. It's a real app, not a screenshot — it handles its own interactions
-in-page, and can talk back through a small `window.mocca` bridge
-(`chat.send`, `files.read/write/list`). Mocca injects its design system, so
-whatever the agent builds looks native. Don't like what it made? Say so — "make the
-player minimal, add a rain toggle" — and it rebuilds it.
+music player. It's a real app — it handles its own interactions in-page, keeps
+playing while you switch workspaces, and can call back through a small
+`window.mocca` bridge (`chat.send`, `files.read/write/list`). Mocca injects its
+design system, so whatever the agent builds looks native. Don't like what it made?
+Say so — "make the player minimal, add a rain toggle" — and it rebuilds it.
+
+### 3. Built per agent, not per developer
+Every agent is its own workspace: its own folder, its own chat threads (which keep
+their memory), its own connected tools, and its own schedule. A DJ that plays music
+and a tax helper that reads your PDFs aren't two modes of one assistant — they're
+two apps, side by side, each set up for its job. Each gets file tools, sandboxed
+Bash, web search, and a **headless browser** (Playwright) for pages `WebFetch`
+can't read — plus per-workspace **MCP** connections (Linear, Notion, GitHub,
+Sentry, Stripe) from a catalog, by name, or bundled by the plugin.
 
 ## How it works
 
