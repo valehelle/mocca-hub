@@ -3,6 +3,8 @@
 **A desktop home for installable AI agents.** Browse a marketplace, install an
 agent, and chat with it — powered by the [Claude Agent SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk).
 
+![Mocca — asked in plain English, the agent builds a working player on the Canvas](assets/screenshot-canvas.png)
+
 ---
 
 ## Why this exists
@@ -31,6 +33,8 @@ Money, Work, Learning…). Open one and read what it *actually* does — its REA
 its skills, and the tools it brings with it — before you install. You can also
 install any Claude Code plugin straight from a GitHub repo (`owner/name`) or a
 local folder.
+
+![The Mocca marketplace — 28 agents, browsable by category, each linking to its source repo](assets/screenshot-marketplace.png)
 
 ### 2. Agents that can do real work
 Each agent gets file tools, sandboxed Bash, web search — and a **headless browser**
