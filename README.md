@@ -5,6 +5,13 @@ agent, and chat with it — powered by the [Claude Agent SDK](https://www.npmjs.
 
 ![Mocca — asked in plain English, the agent builds a working player on the Canvas](assets/screenshot-canvas.png)
 
+> [!IMPORTANT]
+> **You need your own paid Claude access.** Mocca runs agents through the Claude
+> Agent SDK using *your* account — it does not ship a key and there is no free
+> tier. Sign in with a **Claude subscription (Pro or Max)** — the same login
+> Claude Code uses — or set an `ANTHROPIC_API_KEY` (billed per token). Without
+> one, no agent will run.
+
 ---
 
 ## Why this exists
@@ -74,9 +81,14 @@ player minimal, add a rain toggle" — and it rebuilds it.
 ## Requirements
 
 - **macOS (Apple Silicon).** That's what's built and tested.
-- **Claude Code auth** — sign in with a Claude subscription (Pro/Max), or set
-  `ANTHROPIC_API_KEY`. Mocca checks on startup and tells you if it's missing.
-  Settings shows your plan and how much of your usage window you've used.
+- **A paid Claude account — required.** Mocca has no key of its own and no free
+  tier; every agent runs on *your* Claude access. Either:
+  - a **Claude subscription (Pro or Max)** — sign in once, the same way Claude
+    Code does (Mocca reads that login); or
+  - an **`ANTHROPIC_API_KEY`**, billed per token.
+
+  Mocca checks on startup and tells you if it's missing. Settings shows your plan
+  and how much of your usage window you've used.
 
 ## Install
 
