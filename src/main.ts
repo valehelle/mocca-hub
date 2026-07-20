@@ -1828,6 +1828,8 @@ type RunPayload = {
 // speak in plain language the user can click or type.
 const HOST_PREAMBLE = `You are running inside Mocca, a desktop GUI — not a terminal. The user CANNOT type slash commands.
 
+- Every message from the user is prefixed with a \`<current-time>\` tag giving their local date, time and timezone. That is context from Mocca, not something they typed — use it to reason about dates ("this week", "how long until…"), to date anything you write, and to know when a scheduled run is firing. Never repeat the tag back or mention it; just treat it as knowing what time it is.
+
 - Never tell the user to type a slash command (e.g. "/career-ops pdf", "/scan", or any token starting with "/"). Never show slash-command syntax in your replies.
 - When you offer choices or next steps, present them as plain, friendly options with a short description of what each does. Describe them naturally in your prose.
 - Whenever there are concrete next actions, append them at the very END of your message inside an actions block. Put ONE action per line.
@@ -1942,14 +1944,36 @@ function closeSessionsForAgent(agentId: string): void {
   }
 }
 
+// The user's local date/time, stamped onto every turn. A model has no clock, so
+// without this an agent can't answer "what's due this week", date a file it
+// writes, or know that a 9am scheduled run is happening on Tuesday. It goes on
+// each TURN rather than in the system prompt because a session can stay open for
+// days — a prompt built at session start would still claim it's Monday.
+function nowContext(): string {
+  const d = new Date();
+  const local = d.toLocaleString(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return `<current-time>${local} (${zone})</current-time>`;
+}
+
 // An async-iterable queue we push user turns into on demand.
 function makeInputStream() {
   const queue: SDKUserMessage[] = [];
   let pending: ((r: IteratorResult<SDKUserMessage>) => void) | null = null;
   let closed = false;
+  // Stamped when the message is queued (i.e. when the user hits send), which is
+  // what they'd mean by "now" anyway; a turn waiting behind a long one may be a
+  // few minutes stale, which doesn't matter at this granularity.
   const toMsg = (text: string): SDKUserMessage => ({
     type: 'user',
-    message: { role: 'user', content: text },
+    message: { role: 'user', content: `${nowContext()}\n\n${text}` },
     parent_tool_use_id: null,
   });
   return {
