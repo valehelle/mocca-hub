@@ -1374,6 +1374,16 @@ body {
   overflow: auto;
   min-height: 0;
 }
+/* Images get a centred, fixed-size stage so they scale to fit instead of
+   overflowing. `flex: 1` alone leaves the height indefinite, so a percentage
+   max-height on the image would resolve against `auto` and do nothing. */
+.viewer__body:has(.viewer__img) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 20px;
+}
 .viewer__body .line__md {
   padding: 20px 24px;
 }
@@ -1393,10 +1403,17 @@ body {
   border: none;
   background: #fff;
 }
+/* Fit the whole image in the panel — bound BOTH axes, or a tall image renders at
+   full height inside a fixed-height modal and has to be scrolled to be seen.
+   object-fit keeps the aspect ratio while it scales down. */
 .viewer__img {
   display: block;
   max-width: 100%;
-  margin: 20px auto;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  margin: auto;
+  object-fit: contain;
 }
 .viewer__msg {
   padding: 40px 24px;
