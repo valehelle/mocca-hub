@@ -543,12 +543,42 @@ export default function App() {
   const logRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true); // stay pinned to bottom unless the user scrolls up
   const taRef = useRef<HTMLTextAreaElement>(null);
-  // Turns in flight per thread. Streaming input lets you send more while the
-  // agent works, so a thread is "running" whenever any turn is outstanding.
-  const outstandingRef = useRef<Record<string, number>>({});
+  // `running` is driven by what the agent actually does, not by how many times
+  // you pressed send: true when a turn produces output, false when a turn
+  // reports its result. Counting sends and subtracting results looks equivalent
+  // but isn't — sending while the agent works can steer the CURRENT turn rather
+  // than queue a new one, so two sends may only ever yield one result, and a
+  // send-counter never gets back to zero (the UI then spins forever).
   const logsRef = useRef(logs);
   logsRef.current = logs;
+  const sessionIdsRef = useRef(sessionIds);
+  sessionIdsRef.current = sessionIds;
   const prevRunningRef = useRef<Record<string, boolean>>({});
+
+  // Write a thread's transcript to disk. The log lives in React state, so
+  // anything not flushed dies with the process — this is called when you send,
+  // periodically while a turn streams, and when a turn ends.
+  //
+  // `opts` exists for the send path: setState hasn't committed yet there, so the
+  // refs would still be a render behind (and for a brand-new thread the agent id
+  // wouldn't be in them at all). Pass what you know rather than racing React.
+  const saveThread = (tid: string, opts?: { log?: LogLine[]; agentId?: string }) => {
+    const aid = opts?.agentId ?? threadAgentRef.current[tid];
+    const lg = opts?.log ?? logsRef.current[tid];
+    if (!aid || !lg?.length) return;
+    const firstYou = lg.find((l) => l.role === 'you')?.text ?? '';
+    const title =
+      firstYou.replace(/^📎[^\n]*\n+/, '').trim().slice(0, 48) || 'New chat';
+    window.threads.save(aid, tid, {
+      id: tid,
+      title,
+      updatedAt: Date.now(),
+      sessionId: sessionIdsRef.current[tid] ?? null,
+      log: lg,
+    });
+  };
+  const saveThreadRef = useRef(saveThread);
+  saveThreadRef.current = saveThread;
 
   const selected = installed.find((a) => a.id === selectedId) ?? null;
   // Does the currently-open view belong to the workspace on screen? (A view from
@@ -688,7 +718,6 @@ export default function App() {
         setSessionIds((m) => ({ ...m, [tid]: t?.sessionId ?? null }));
       }
       stoppedRef.current[tid] = false; // a scheduled run restarts this thread
-      outstandingRef.current[tid] = (outstandingRef.current[tid] ?? 0) + 1;
       setRunningMap((m) => ({ ...m, [tid]: true }));
       setAwaitingMap((m) => ({ ...m, [tid]: true }));
       append(tid, { role: 'you', text: prompt });
@@ -696,6 +725,9 @@ export default function App() {
 
     const offStreamStart = window.agent.onStreamStart((tid, kind) => {
       if (stoppedRef.current[tid]) return; // late event after Stop
+      // Output means it's working — covers a turn that starts on its own, e.g.
+      // a message queued while the last one ran.
+      setRunningMap((m) => (m[tid] ? m : { ...m, [tid]: true }));
       setAwaitingMap((m) => ({ ...m, [tid]: false }));
       append(tid, {
         role: kind === 'text' ? 'agent' : 'thinking',
@@ -722,25 +754,20 @@ export default function App() {
     });
 
     const offDone = window.agent.onDone((tid) => {
-      outstandingRef.current[tid] = Math.max(
-        0,
-        (outstandingRef.current[tid] ?? 1) - 1,
-      );
+      // A result means this turn is over — end it, unconditionally. If more work
+      // follows, onStreamStart flips it back to running.
       finalizeStreaming(tid);
       refreshFiles(selectedIdRef.current);
       refreshCanvases(selectedIdRef.current);
-      if (outstandingRef.current[tid] === 0) {
-        thinkStartRef.current[tid] = null;
-        setAwaitingMap((m) => ({ ...m, [tid]: false }));
-        setRunningMap((m) => ({ ...m, [tid]: false }));
-        // Turn ended — if a Canvas was being composed but none rendered (agent
-        // wrote a scratch file, or changed its mind), drop the composing cue.
-        const owner = threadAgentRef.current[tid];
-        if (owner) setComposing((c) => (c === owner ? null : c));
-      }
+      thinkStartRef.current[tid] = null;
+      setAwaitingMap((m) => ({ ...m, [tid]: false }));
+      setRunningMap((m) => ({ ...m, [tid]: false }));
+      // Turn ended — if a Canvas was being composed but none rendered (agent
+      // wrote a scratch file, or changed its mind), drop the composing cue.
+      const owner = threadAgentRef.current[tid];
+      if (owner) setComposing((c) => (c === owner ? null : c));
     });
     const offError = window.agent.onError((tid, text) => {
-      outstandingRef.current[tid] = 0;
       thinkStartRef.current[tid] = null;
       setAwaitingMap((m) => ({ ...m, [tid]: false }));
       finalizeStreaming(tid);
@@ -860,21 +887,8 @@ export default function App() {
     for (const tid of Object.keys(prevRunningRef.current)) {
       if (!prevRunningRef.current[tid] || runningMap[tid]) continue;
       const aid = threadAgent[tid];
-      const lg = logs[tid];
-      if (!aid || !lg?.length) continue;
-      const firstYou = lg.find((l) => l.role === 'you')?.text ?? '';
-      const title =
-        firstYou
-          .replace(/^📎[^\n]*\n+/, '')
-          .trim()
-          .slice(0, 48) || 'New chat';
-      window.threads.save(aid, tid, {
-        id: tid,
-        title,
-        updatedAt: Date.now(),
-        sessionId: sessionIds[tid] ?? null,
-        log: lg,
-      });
+      if (!aid || !logs[tid]?.length) continue;
+      saveThreadRef.current(tid);
       if (aid === selectedIdRef.current) {
         window.threads
           .list(aid)
@@ -885,6 +899,29 @@ export default function App() {
     prevRunningRef.current = { ...runningMap };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runningMap]);
+
+  // Flush running threads to disk as they stream. Saving only at the end of a
+  // turn meant killing the app mid-turn lost the whole thing — your message and
+  // everything the agent had streamed. Throttled on an interval rather than
+  // debounced on `logs`, since a debounce never fires while tokens keep landing.
+  useEffect(() => {
+    const live = Object.keys(runningMap).filter((tid) => runningMap[tid]);
+    if (!live.length) return;
+    const t = setInterval(() => {
+      for (const tid of live) saveThreadRef.current(tid);
+    }, 2500);
+    return () => clearInterval(t);
+  }, [runningMap]);
+
+  // Last chance on a clean quit/reload. (A hard kill still can't run this — the
+  // interval above is what covers that.)
+  useEffect(() => {
+    const flush = () => {
+      for (const tid of Object.keys(logsRef.current)) saveThreadRef.current(tid);
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, []);
 
   async function attachFiles() {
     if (!selected) return;
@@ -1311,13 +1348,19 @@ export default function App() {
       (typed || `I've attached ${attached.join(', ')}. Please take a look.`);
 
     stoppedRef.current[tid] = false; // running again — accept stream events
-    outstandingRef.current[tid] = (outstandingRef.current[tid] ?? 0) + 1;
     setRunningMap((m) => ({ ...m, [tid]: true }));
     setAwaitingMap((m) => ({ ...m, [tid]: true }));
     setThreadAgent((m) => ({ ...m, [tid]: selected.id }));
     setPrompt('');
     if (taRef.current) taRef.current.style.height = 'auto';
-    append(tid, { role: 'you', text: task });
+    const line: LogLine = { role: 'you', text: task };
+    append(tid, line);
+    // Persist immediately — `append` only touches state, so without this your
+    // message is gone if the app dies before the turn ends.
+    saveThreadRef.current(tid, {
+      log: [...(logsRef.current[tid] ?? []), line],
+      agentId: selected.id,
+    });
     window.agent.run({
       task,
       instructions: selected.instructions,
@@ -1424,7 +1467,6 @@ export default function App() {
     // idle right now. Reset rather than waiting to count a `done` per outstanding
     // turn: messages sent while the agent was working are dropped on stop, so
     // those `done`s never arrive and the UI would sit on "working" forever.
-    outstandingRef.current[tid] = 0;
     thinkStartRef.current[tid] = null;
     finalizeStreaming(tid);
     setAwaitingMap((m) => ({ ...m, [tid]: false }));
